@@ -40,7 +40,7 @@ let main = async function () {
     await splitImagesInCache()
 
     // await ShellSpawn(`img2pdf -o "/input/${filenameNoExt}.pdf" ${imgs.join(" ")}`)
-    await ShellExec(`zip -r "/input/${filenameNoExt}_half.zip" /cache/img`)
+    await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
   }
 }
 
@@ -64,7 +64,7 @@ let splitImagesInCache = async function () {
         let filenameNoExt = imgFilename.slice(0, imgFilename.lastIndexOf('.'))
         await ShellExec(`mv "/cache/img/${img}" /cache/split`)
 
-        let splitCommand = `convert -crop 100%x50% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
+        let splitCommand = `convert -crop 50%x100% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
         await ShellExec(splitCommand)
 
         await ShellSpawn([`ls`, '/cache/split/'])
