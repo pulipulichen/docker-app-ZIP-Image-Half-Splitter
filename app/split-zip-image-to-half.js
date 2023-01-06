@@ -73,7 +73,7 @@ let splitImagesInCache = async function () {
         await ShellExec(`rm -rf "/cache/split/${imgFilename}"`)
 
         await ShellSpawn([`ls`, '/cache/split/'])
-        await ShellExec(`mv "/cache/split/*" /cache/img/`)
+        await ShellExec(`mv /cache/split/* /cache/img/`)
       }
     }
 }
