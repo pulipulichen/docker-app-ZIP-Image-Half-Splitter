@@ -57,7 +57,7 @@ let splitImagesInCache = async function () {
       let size = sizeString.split(' ')
 
       if (size[0] > size[1]) {
-        await ShellExec(`rm -rf /cache/split/*`)
+        // await ShellExec(`rm -rf /cache/split/*`)
 
         let imgFilename = img
         let ext = imgFilename.slice(imgFilename.lastIndexOf('.') + 1)
