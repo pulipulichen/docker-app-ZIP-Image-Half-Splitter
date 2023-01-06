@@ -5,7 +5,7 @@ RUN apt-get update
 RUN apt-get install -y \
     unzip zip imagemagick
 
-# COPY package.json /
-# RUN npm install
+COPY package.json /
+RUN npm install
 
 CMD ["bash"]
