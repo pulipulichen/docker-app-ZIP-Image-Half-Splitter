@@ -67,6 +67,8 @@ let splitImagesInCache = async function () {
         let splitCommand = `convert -crop 100%x50% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
         await ShellExec(splitCommand)
 
+        await ShellSpawn([`ls`, '/cache/split/'])
+
         // 先移動到暫存資料夾
         await ShellExec(`rm -rf "/cache/split/${imgFilename}"`)
         await ShellExec(`mv "/cache/split/*" /cache/img/`)
