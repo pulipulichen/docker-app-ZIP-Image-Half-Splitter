@@ -23,7 +23,7 @@ let main = async function () {
 
     let commandsUnzip = [
       `rm -rf /cache/*`,
-      `cp "${file}" "/cache/${filename}"`,
+      
       `mkdir -p /cache/img`,
       `mkdir -p /cache/split`,
       // `unzip -j -d "/cache/img" "/cache/${filename}"`
@@ -40,6 +40,8 @@ let main = async function () {
         filenameNoExt = filenameNoExt.slice(0, -4)
       }
 
+      await ShellExec(`cp "${file}" "/cache/${filename}"`)
+      
       // ------------------
 
       await UnzipFlatten(`/cache/${filename}`, `/cache/img`)  
