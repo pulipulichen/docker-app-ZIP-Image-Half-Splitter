@@ -13,6 +13,7 @@ let main = async function () {
   let files = GetExistedArgv()
   for (let i = 0; i < files.length; i++) {
     let file = files[i]
+    console.log(file)
 
     // ----------------------------------------------------------------
     // 如果是資料夾，那就直接做個處理吧

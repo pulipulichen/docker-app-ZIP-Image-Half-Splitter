@@ -302,8 +302,9 @@ if [ "$INPUT_FILE" != "false" ]; then
     do
       cd "${WORK_DIR}"
 
-
-      var=getRealpath "${var}"
+      if [ -f "${var}"]; then
+        var=getRealpath "${var}"
+      fi
       cd "/tmp/${PROJECT_NAME}"
       setDockerComposeYML "${var}"
 
