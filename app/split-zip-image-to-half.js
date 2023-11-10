@@ -21,23 +21,23 @@ let main = async function () {
 
     // ----------------------------------------------------------------
 
+    let commandsUnzip = [
+      `rm -rf /cache/*`,
+      `cp "${file}" "/cache/${filename}"`,
+      `mkdir -p /cache/img`,
+      `mkdir -p /cache/split`,
+      // `unzip -j -d "/cache/img" "/cache/${filename}"`
+    ]
+    for (let j = 0; j < commandsUnzip.length; j++) {
+      await ShellExec(commandsUnzip[j])
+    }
+
     let mode
     if (file.endsWith('.zip')) {
       let filename = path.basename(file)
       let filenameNoExt = filename
       if (filenameNoExt.endsWith('.zip')) {
         filenameNoExt = filenameNoExt.slice(0, -4)
-      }
-
-      let commandsUnzip = [
-        `rm -rf /cache/*`,
-        `cp "${file}" "/cache/${filename}"`,
-        `mkdir -p /cache/img`,
-        `mkdir -p /cache/split`,
-        // `unzip -j -d "/cache/img" "/cache/${filename}"`
-      ]
-      for (let j = 0; j < commandsUnzip.length; j++) {
-        await ShellExec(commandsUnzip[j])
       }
 
       // -----------------
@@ -47,8 +47,6 @@ let main = async function () {
     } 
     else if (isDirectory(file)) {
       let filename = file
-      await ShellExec(`rm -rf /cache/*`)
-      await ShellExec(`mkdir -p /cache/img`)
       let imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'tif', 'tiff']
       let imagePathPatters = imageTypes.map(type => {
         return `"${filename}"/*.${type}`
@@ -103,7 +101,7 @@ let splitImagesInCache = async function () {
         let imgFilename = img
         let ext = imgFilename.slice(imgFilename.lastIndexOf('.') + 1)
         let filenameNoExt = imgFilename.slice(0, imgFilename.lastIndexOf('.'))
-        await ShellExec(`mv "/cache/img/${img}" /cache/split/`)
+        await ShellExec(`mv "/cache/img/${img}" /cache/split`)
 
         let splitCommand = `convert -crop 50%x100% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
         console.log(splitCommand)
