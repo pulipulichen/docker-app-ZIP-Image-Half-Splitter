@@ -71,6 +71,15 @@ let main = async function () {
         
       mode = 'dir'
     }
+    else if (file.endsWith('.pdf')) {
+      filenameNoExt = path.basename(file)
+      await ShellExec(`pdfimages "${file}" -png "/cache/img/"`)
+
+      mode = 'pdf'
+    }
+    else {
+      continue
+    }
 
     // ----------------
     await splitImagesInCache()
@@ -79,7 +88,10 @@ let main = async function () {
     if (mode === 'zip') {
       await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
     }
-    else {
+    else if (mode === 'pdf') {
+      await ShellExec(`cd /cache/img/; convert *.png /input/${filenameNoExt}_half.pdf`)
+    } 
+    else if (mode === 'dir') {
       await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/input/${filenameNoExt}_half/"`)
     } 
   }

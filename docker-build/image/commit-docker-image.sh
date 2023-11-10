@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE_NAME=pudding/docker-app:zip-image-half-spliter-20231110-2006
+IMAGE_NAME=pudding/docker-app:zip-image-half-spliter-20231110-2007
 
 docker tag docker-app-zip-image-half-splitter-app ${IMAGE_NAME}
 docker push "${IMAGE_NAME}"

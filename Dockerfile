@@ -1,4 +1,4 @@
-FROM node:18.12.1-buster
+FROM node:18.12.1-bullseye
 
 RUN apt-get update
 
@@ -21,3 +21,8 @@ ENV LANG zh_TW.UTF-8
 ENV LC_ALL zh_TW.UTF-8
 RUN localedef -c -f UTF-8 -i zh_CN zh_CN.utf8
 RUN localedef -c -f UTF-8 -i zh_TW zh_TW.utf8
+
+# PDF抽取圖片 20231110-2214 
+RUN apt-get install -y \
+    poppler-utils 
+
