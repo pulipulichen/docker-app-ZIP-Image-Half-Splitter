@@ -59,7 +59,12 @@ let main = async function () {
         await ShellExec(`cp -f ${imagePathPatters} /cache/img/`)
       }
       catch (e) {
-        break
+        // break
+      }
+
+      let imgs = fs.readdirSync('/cache/img/')
+      if (imgs.length === 0) {
+        continue
       }
         
       mode = 'dir'
