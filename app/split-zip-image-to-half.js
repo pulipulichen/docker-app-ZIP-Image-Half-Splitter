@@ -95,7 +95,7 @@ let main = async function () {
       await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
     }
     else if (mode === 'pdf') {
-      await ShellExec(`cd /cache/img/; convert *.png "/input/${filenameNoExt}_half.pdf"`)
+      await ShellExec(`cd /cache/img/; img2pdf *.png -o "/input/${filenameNoExt}_half.pdf"`)
     } 
     else if (mode === 'dir') {
       await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/input/${filenameNoExt}_half/"`)
