@@ -11,3 +11,8 @@ RUN npm install
 CMD ["bash"]
 
 ENV LNAG="C.UTF-8"
+
+RUN apt-get install -y locales
+RUN locale-gen zh_TW.UTF-8
+ENV LANG zh_TW.UTF-8
+ENV LC_ALL zh_TW.UTF-8
