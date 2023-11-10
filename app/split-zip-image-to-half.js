@@ -13,7 +13,7 @@ let main = async function () {
   let files = GetExistedArgv()
   for (let i = 0; i < files.length; i++) {
     let file = files[i]
-    console.log(file)
+    // console.log(file)
 
     // ----------------------------------------------------------------
     // 如果是資料夾，那就直接做個處理吧
@@ -51,7 +51,7 @@ let main = async function () {
       await ShellExec(`mkdir -p /cache/img`)
       let imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'tif', 'tiff']
       let imagePathPatters = imageTypes.map(type => {
-        return `"${filename}/*.${type}"`
+        return `"${filename}"/*.${type}`
       }).join(' ')
 
 
