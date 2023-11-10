@@ -20,6 +20,7 @@ let main = async function () {
 
     // ----------------------------------------------------------------
 
+    let mode
     if (file.endsWith('.zip')) {
       let filename = path.basename(file)
       let filenameNoExt = filename
@@ -41,17 +42,25 @@ let main = async function () {
       // -----------------
 
       await UnzipFlatten(`/cache/${filename}`, `/cache/img`)  
+      mode = 'zip'
     } 
     else if (isDirectory(file)) {
-
+      await ShellExec(`rm -rf /cache/*`)
+      await ShellExec(`mkdir -p /cache/img`)
+      await ShellExec(`cp -f /input/${filename}/*.png /input/${filename}/*.tiff /input/${filename}/*.jpg /input/${filename}/*.gif /input/${filename}/*.jpeg /input/${filename}/*.webp /cache/img/`)
+      mode = 'dir'
     }
-      
 
     // ----------------
     await splitImagesInCache()
 
     // await ShellSpawn(`img2pdf -o "/input/${filenameNoExt}.pdf" ${imgs.join(" ")}`)
-    await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
+    if (mode === 'zip') {
+      await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
+    }
+    else {
+      await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/input/${filenameNoExt}_half/"`)
+    } 
   }
 }
 
