@@ -33,9 +33,10 @@ let main = async function () {
     }
 
     let mode
+    let filenameNoExt
     if (file.endsWith('.zip')) {
       let filename = path.basename(file)
-      let filenameNoExt = filename
+      filenameNoExt = filename
       if (filenameNoExt.endsWith('.zip')) {
         filenameNoExt = filenameNoExt.slice(0, -4)
       }
@@ -49,6 +50,7 @@ let main = async function () {
     } 
     else if (isDirectory(file)) {
       let filename = file
+      filenameNoExt = path.basename(file)
       let imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'tif', 'tiff']
       let imagePathPatters = imageTypes.map(type => {
         return `"${filename}"/*.${type}`
