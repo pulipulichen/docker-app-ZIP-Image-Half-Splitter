@@ -134,7 +134,7 @@ var="$1"
 useParams="true"
 WORK_DIR=`pwd`
 if [ "$INPUT_FILE" != "false" ]; then
-  if [ ! -f "$var" ]; then
+  if [ ! -e "$var" ]; then
     # echo "$1 does not exist."
     # exit
     if command -v kdialog &> /dev/null; then
