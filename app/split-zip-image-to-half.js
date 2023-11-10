@@ -48,7 +48,13 @@ let main = async function () {
       let filename = file
       await ShellExec(`rm -rf /cache/*`)
       await ShellExec(`mkdir -p /cache/img`)
-      await ShellExec(`cp -f /input/${filename}/*.png /input/${filename}/*.tiff /input/${filename}/*.jpg /input/${filename}/*.gif /input/${filename}/*.jpeg /input/${filename}/*.webp /cache/img/`)
+      let imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp']
+      let imagePathPatters = imageTypes.map(type => {
+        return `"/input/${filename}/*.${type}"`
+      }).join(' ')
+
+
+      await ShellExec(`cp -f ${imagePathPatters} /cache/img/`)
       mode = 'dir'
     }
 
