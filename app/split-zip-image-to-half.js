@@ -45,6 +45,7 @@ let main = async function () {
       mode = 'zip'
     } 
     else if (isDirectory(file)) {
+      let filename = file
       await ShellExec(`rm -rf /cache/*`)
       await ShellExec(`mkdir -p /cache/img`)
       await ShellExec(`cp -f /input/${filename}/*.png /input/${filename}/*.tiff /input/${filename}/*.jpg /input/${filename}/*.gif /input/${filename}/*.jpeg /input/${filename}/*.webp /cache/img/`)
