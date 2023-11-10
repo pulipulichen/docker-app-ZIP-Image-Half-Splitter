@@ -73,7 +73,7 @@ let main = async function () {
     }
     else if (file.endsWith('.pdf')) {
       filenameNoExt = path.parse(file).name
-      await ShellExec(`pdfimages "${file}" -png "/cache/img/"`)
+      await ShellExec(`pdftoppm -png "${file}" "/cache/img/${filenameNoExt}"`)
 
       mode = 'pdf'
     }
