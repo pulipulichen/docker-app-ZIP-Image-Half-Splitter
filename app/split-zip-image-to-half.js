@@ -7,7 +7,7 @@ const fs = require('fs')
 
 const UnzipFlatten = require('./lib-zip/UnzipFlatten')
 
-const isDirectory = require('./lib-zip/isDirectory')
+const isDirectory = require('./lib/isDirectory')
 
 let main = async function () {
   let files = GetExistedArgv()
