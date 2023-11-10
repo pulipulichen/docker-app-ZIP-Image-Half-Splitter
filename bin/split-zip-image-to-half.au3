@@ -6,8 +6,13 @@ Global $sPROJECT_NAME = "docker-app-ZIP-Image-Half-Splitter"
 ;~ ---------------------
 
 ;~ MsgBox($MB_SYSTEMMODAL, "Title", "This message box will timeout after 10 seconds or select the OK button.", 10)
+Local $sProjectFolder = @HomeDrive & @HomePath & "\docker-app\" & $sPROJECT_NAME
+Local $inited = 1
+If Not FileExists($sProjectFolder) then
+	$inited = 0
+	MsgBox($MB_SYSTEMMODAL, $sPROJECT_NAME, "Before executing the script, it is recommended to either disable your antivirus software or add this script to the antivirus software's whitelist to prevent any unintended issues.", 30)
+EndIf
 
-MsgBox($MB_SYSTEMMODAL, $sPROJECT_NAME, "Before executing the script, it is recommended to either disable your antivirus software or add this script to the antivirus software's whitelist to prevent any unintended issues.", 30)
 Local $sWorkingDir = @WorkingDir
 
 ;~ ---------------------
@@ -37,7 +42,7 @@ EndIf
 ;~ ---------------------
 
 ;Local $sProjectFolder = @TempDir & "\" & $sPROJECT_NAME
-Local $sProjectFolder = @HomeDrive & @HomePath & "\docker-app\" & $sPROJECT_NAME
+
 ;~ MsgBox($MB_SYSTEMMODAL, FileExists($sProjectFolder), $sProjectFolder)
 ShellExecuteWait("git", "config --global core.autocrlf false", "", "open", @SW_HIDE)
 If Not FileExists($sProjectFolder) Then
@@ -72,7 +77,7 @@ FileCopy($sProjectFolder & "\Dockerfile", $sProjectFolderCache & "\Dockerfile", 
 FileCopy($sProjectFolder & "\package.json", $sProjectFolderCache & "\package.json", $FC_OVERWRITE)
 
 ;~ =================================================================
-;~ 從docker-compose-template.yml來判斷參數
+;~ ?docker-compose-template.yml?????
 
 Local $INPUT_FILE = 0
 
@@ -115,7 +120,7 @@ If FileExists($DOCKER_COMPOSE_FILE) Then
 EndIf
 
 ;~ ---------------------
-;~ 選取檔案
+;~ ????
 
 Global $sFILE_EXT = "* (*.*)"
 
@@ -125,32 +130,81 @@ If $INPUT_FILE = 1 Then
 	If $CmdLine[0] = 0 Then
 		$sUseParams = false
 		Local $sMessage = "Select File"
-		Local $sFileOpenDialog = FileOpenDialog($sMessage, @DesktopDir & "\", $sFILE_EXT , $FD_FILEMUSTEXIST + $FD_MULTISELECT)
+		Local $sFileOpenDialog = FileOpenDialog($sMessage, @ScriptDir & "\", $sFILE_EXT , $FD_FILEMUSTEXIST + $FD_MULTISELECT)
 		$sFiles = StringSplit($sFileOpenDialog, "|")
 	EndIf
 EndIf
 
 ;~ =================================================================
-;~ 宣告函數
+;~ ????
 
 Func getCloudflarePublicURL()
 	;ConsoleWrite("getCloudflarePublicURL"  & @CRLF)
     Local $dirname = @ScriptDir
+    
+    Local $cloudflareFailed = $dirname & "" & $sPROJECT_NAME & "\.cloudflare.failed"
+    If FileExists($cloudflareFailed) Then
+	    Return false
+    EndIf
 
     Local $cloudflareFile = $dirname & "" & $sPROJECT_NAME & "\.cloudflare.url"
 	;ConsoleWrite($cloudflareFile  & @CRLF)
+		Local $timeout = 60 ; 60 seconds timeout
+		Local $interval = 5 ; 5 seconds interval
+		Local $elapsedTime = 0
 
-    While Not FileExists($cloudflareFile)
-        Sleep(3000) ; Check every 1 second
-    WEnd
+		While $elapsedTime < $timeout
+		    If FileExists($cloudflareFile) Then
+			ConsoleWrite("Existed"  & @CRLF)
+			Local $fileContent = FileRead($cloudflareFile)
+			ConsoleWrite($fileContent  & @CRLF)
+			If StringStripWS($fileContent, 1 + 2) <> "" Then
+			   Return $fileContent
+			EndIf
+		    EndIf
 
-    Local $fileContent = FileRead($cloudflareFile)
-		While StringStripWS($fileContent, 1 + 2) = ""
-      Sleep(3000) ; Check every 1 second
-			$fileContent = FileRead($cloudflareFile)
+		    Sleep($interval * 1000) ; Sleep for $interval seconds
+		    $elapsedTime += $interval
+		WEnd
+
+		setCloudflareFailed()
+		Return false
+EndFunc
+
+Func waitForDockerAppReady()
+	;ConsoleWrite("getCloudflarePublicURL"  & @CRLF)
+    Local $dirname = @ScriptDir
+    
+    Local $readyFile = $dirname & "" & $sPROJECT_NAME & "\.docker-web.ready"
+    While Not FileExists($readyFile)
+	    Sleep(3000)
     WEnd
-	;ConsoleWrite($fileContent  & @CRLF)
-    Return $fileContent
+EndFunc
+
+Func setCloudflareFailed()
+	Local $dirname = @ScriptDir
+	; Specify the file path
+	Local $filePath = $dirname & "" & $sPROJECT_NAME & "\.cloudflare.failed"
+
+	; Open the file for writing (creates the file if it doesn't exist)
+	Local $fileHandle = FileOpen($filePath, 2) ; 2 for write mode
+
+	; Check if the file was opened successfully
+	If $fileHandle = -1 Then
+	    MsgBox(16, "Error", "Unable to open file for writing.")
+	    Exit
+	EndIf
+
+	; Write the content to the file
+	FileWrite($fileHandle, "ok")
+
+	; Close the file handle
+	FileClose($fileHandle)
+
+	;MsgBox(64, "Success", "File written successfully.")
+
+	; Exit the script
+	;Exit
 EndFunc
 
 ;~ ----------------------------------------------------------------
@@ -158,28 +212,33 @@ EndFunc
 Func setDockerComposeYML($file)
 	;ConsoleWrite($file)
 	;$file = StringReplace($file, "\\", "/")
-	;MsgBox($MB_SYSTEMMODAL, "Title", $file, 10)
+	;MsgBox($MB_SYSTEMMODAL, "Title " & FileExists($file), $file, 10)
+
+	Local $template = FileRead($sProjectFolder & "\docker-build\image\docker-compose-template.yml")
+	If FileExists($file) Then
+
+	  Local $dirname = StringLeft($file, StringInStr($file, "\", 0, -1) - 1)
+		If StringLeft($dirname, 1) = '"' Then
+			$dirname = StringTrimLeft($dirname, 1)
+		EndIf
+	  
+		Local $filename = StringMid($file, StringInStr($file, "\", 0, -1) + 1)
 
 
-  Local $dirname = StringLeft($file, StringInStr($file, "\", 0, -1) - 1)
-	If StringLeft($dirname, 1) = '"' Then
-		$dirname = StringTrimLeft($dirname, 1)
-	EndIf
-  
-	Local $filename = StringMid($file, StringInStr($file, "\", 0, -1) + 1)
+		$dirname = StringReplace($dirname, '\', "/")
+		If StringRight($dirname, 1) = ':' Then
+			$dirname = $dirname & "/"
+		EndIf
+			
+		;MsgBox($MB_SYSTEMMODAL, "Title", $dirname, 10)
 
-
-	$dirname = StringReplace($dirname, '\', "/")
 		
-	;MsgBox($MB_SYSTEMMODAL, "Title", $dirname, 10)
-
-	
-    Local $template = FileRead($sProjectFolder & "\docker-build\image\docker-compose-template.yml")
-	;ConsoleWrite($template)
-	
-    $template = StringReplace($template, "[SOURCE]", $dirname)
-    $template = StringReplace($template, "[INPUT]", $filename)
-
+		;Local $template = FileRead($sProjectFolder & "\docker-build\image\docker-compose-template.yml")
+		;ConsoleWrite($template)
+		
+		$template = StringReplace($template, "[SOURCE]", $dirname)
+		$template = StringReplace($template, "[INPUT]", $filename)
+	EndIf
 	FileDelete($sProjectFolder & "\docker-compose.yml")
     FileWrite($sProjectFolder & "\docker-compose.yml", $template)
 	;ConsoleWrite($template & @CRLF)
@@ -218,7 +277,7 @@ Func runDockerCompose()
 	RunWait(@ComSpec & " /c docker-compose down")
 	If $PUBLIC_PORT = 0 then
 		RunWait(@ComSpec & " /c docker-compose up --build")
-		Exit(1)
+		Exit(0)
 	Else
 		RunWait(@ComSpec & " /c docker-compose up --build -d")
 	EndIf
@@ -229,30 +288,46 @@ Func runDockerCompose()
 	
 	Local $cloudflare_url=getCloudflarePublicURL()
 
-	Sleep(1000)
+	waitForDockerAppReady()
 
 	ConsoleWrite("================================================================" & @CRLF)
 	ConsoleWrite("You can link the website via following URL:" & @CRLF)
 	ConsoleWrite(@CRLF)
 
-	ConsoleWrite($cloudflare_url)
+	If $cloudflare_url <> false Then
+		ConsoleWrite($cloudflare_url)
+	EndIf
 	ConsoleWrite("http://127.0.0.1:" & $PUBLIC_PORT & @CRLF)
+		
 
 	ConsoleWrite(@CRLF)
 	ConsoleWrite("Press Ctrl+C to stop the Docker container and exit." & @CRLF)
 	ConsoleWrite("================================================================" & @CRLF)
 	
-	Sleep(3000)
+	;Sleep(3000)
 	;ShellExecute($cloudflare_url, "", "open", @SW_HIDE)
-	ShellExecute($cloudflare_url)
 	
-	While True
-    Sleep(5000) ; Sleep for 1 second (1000 milliseconds)
-	WEnd
+	
+	If $cloudflare_url <> false Then
+		ShellExecute($cloudflare_url)
+		Sleep(3000)
+	ElseIf $inited = 0 Then
+		ShellExecute("http://127.0.0.1:" & $PUBLIC_PORT)
+		Sleep(3000)
+	EndIf
+	
+	; Display a message box with the OK button
+	MsgBox(0, $sPROJECT_NAME, "Server is running. Click OK to exit the script.")
+	
+	RunWait(@ComSpec & " /c docker-compose down")
+
+	; Exit the script
+	Exit(0)
 EndFunc
 
 ;~ ---------------------
 
+TrayTip("Docker APP", $sPROJECT_NAME & " is running", 60, 1)
 If $INPUT_FILE = 1 Then 
 	If $sUseParams = true Then
 		For $i = 1 To $CmdLine[0]
@@ -266,20 +341,23 @@ If $INPUT_FILE = 1 Then
 				EndIf
 			Else
 				; ShellExecuteWait("node", $sProjectFolder & "\index.js" & ' "' & $CmdLine[$i] & '"')
-				setDockerComposeYML('"' & $CmdLine[$i] & '"')
+				setDockerComposeYML($CmdLine[$i])
 				runDockerCompose()
 			EndIf
 		Next
 	Else
 		For $i = 1 To $sFiles[0]
-			FileChangeDir($sProjectFolder)
-			; ShellExecuteWait("node", $sProjectFolder & "\index.js" & ' "' & $sFiles[$i] & '"')
-			setDockerComposeYML('"' & $sFiles[$i] & '"')
-			runDockerCompose()
+			MsgBox($MB_SYSTEMMODAL, $sPROJECT_NAME, $sFiles[$i])
+			If FileExists($sFiles[$i]) Then
+				FileChangeDir($sProjectFolder)
+				; ShellExecuteWait("node", $sProjectFolder & "\index.js" & ' "' & $sFiles[$i] & '"')
+				setDockerComposeYML($sFiles[$i])
+				runDockerCompose()
+			EndIf
 		Next
 	EndIf
 Else
 	FileChangeDir($sProjectFolder)
-	setDockerComposeYML('"' & @ScriptFullPath & '"')
+	setDockerComposeYML(@ScriptFullPath)
 	runDockerCompose()
 EndIf
