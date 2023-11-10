@@ -50,7 +50,7 @@ let main = async function () {
       await ShellExec(`mkdir -p /cache/img`)
       let imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp']
       let imagePathPatters = imageTypes.map(type => {
-        return `"/input/${filename}/*.${type}"`
+        return `"${filename}/*.${type}"`
       }).join(' ')
 
 
