@@ -92,6 +92,8 @@ let splitImagesInCache = async function () {
       let img = imgs[i]
 
       let sizeCommand = `identify -ping -format '%[width] %[height]' "/cache/img/${img}"`
+      console.log(sizeCommand)
+
       let sizeString = await ShellExec(sizeCommand)
       let size = sizeString.split(' ')
 
@@ -104,6 +106,7 @@ let splitImagesInCache = async function () {
         await ShellExec(`mv "/cache/img/${img}" /cache/split`)
 
         let splitCommand = `convert -crop 50%x100% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
+        console.log(splitCommand)
         await ShellExec(splitCommand)
 
         await ShellSpawn([`ls`, '/cache/split/'])
