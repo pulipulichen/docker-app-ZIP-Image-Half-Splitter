@@ -302,7 +302,7 @@ if [ "$INPUT_FILE" != "false" ]; then
     do
       cd "${WORK_DIR}"
 
-      if [ -f "${var}"]; then
+      if [ -f "${var}" ]; then
         var=getRealpath "${var}"
       fi
       cd "/tmp/${PROJECT_NAME}"
