@@ -40,7 +40,7 @@ let main = async function () {
         filenameNoExt = filenameNoExt.slice(0, -4)
       }
 
-      // -----------------
+      // ------------------
 
       await UnzipFlatten(`/cache/${filename}`, `/cache/img`)  
       mode = 'zip'
