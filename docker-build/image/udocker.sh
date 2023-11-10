@@ -6,7 +6,7 @@
 # - 目錄路徑必須是完整路徑
 
 PROJECT_NAME=docker-app-ZIP-Image-Half-Splitter
-IMAGE_NAME=pudding/docker-app:zip-image-half-spliter-20231110-200
+IMAGE_NAME=pudding/docker-app:zip-image-half-spliter-20231110-2006
 LOCAL_VOLUMN_PATH=/app
 LOCAL_PORT=8983
 RUN_IN_BACKGROUND=false
