@@ -103,7 +103,7 @@ let splitImagesInCache = async function () {
         let imgFilename = img
         let ext = imgFilename.slice(imgFilename.lastIndexOf('.') + 1)
         let filenameNoExt = imgFilename.slice(0, imgFilename.lastIndexOf('.'))
-        await ShellExec(`mv "/cache/img/${img}" /cache/split`)
+        await ShellExec(`mv "/cache/img/${img}" /cache/split/`)
 
         let splitCommand = `convert -crop 50%x100% +repage "/cache/split/${imgFilename}" "/cache/split/${filenameNoExt}_%d.${ext}"`
         console.log(splitCommand)
