@@ -7,34 +7,45 @@ const fs = require('fs')
 
 const UnzipFlatten = require('./lib-zip/UnzipFlatten')
 
+const isDirectory = require('./lib-zip/isDirectory')
+
 let main = async function () {
   let files = GetExistedArgv()
   for (let i = 0; i < files.length; i++) {
     let file = files[i]
-    if (file.endsWith('.zip') === false) {
-      continue
+
+    // ----------------------------------------------------------------
+    // 如果是資料夾，那就直接做個處理吧
+
+
+    // ----------------------------------------------------------------
+
+    if (file.endsWith('.zip')) {
+      let filename = path.basename(file)
+      let filenameNoExt = filename
+      if (filenameNoExt.endsWith('.zip')) {
+        filenameNoExt = filenameNoExt.slice(0, -4)
+      }
+
+      let commandsUnzip = [
+        `rm -rf /cache/*`,
+        `cp "${file}" "/cache/${filename}"`,
+        `mkdir -p /cache/img`,
+        `mkdir -p /cache/split`,
+        // `unzip -j -d "/cache/img" "/cache/${filename}"`
+      ]
+      for (let j = 0; j < commandsUnzip.length; j++) {
+        await ShellExec(commandsUnzip[j])
+      }
+
+      // -----------------
+
+      await UnzipFlatten(`/cache/${filename}`, `/cache/img`)  
+    } 
+    else if (isDirectory(file)) {
+
     }
-
-    let filename = path.basename(file)
-    let filenameNoExt = filename
-    if (filenameNoExt.endsWith('.zip')) {
-      filenameNoExt = filenameNoExt.slice(0, -4)
-    }
-
-    let commandsUnzip = [
-      `rm -rf /cache/*`,
-      `cp "${file}" "/cache/${filename}"`,
-      `mkdir -p /cache/img`,
-      `mkdir -p /cache/split`,
-      // `unzip -j -d "/cache/img" "/cache/${filename}"`
-    ]
-    for (let j = 0; j < commandsUnzip.length; j++) {
-      await ShellExec(commandsUnzip[j])
-    }
-
-    // -----------------
-
-    await UnzipFlatten(`/cache/${filename}`, `/cache/img`)
+      
 
     // ----------------
     await splitImagesInCache()
