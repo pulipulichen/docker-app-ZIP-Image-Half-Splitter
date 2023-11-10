@@ -10,4 +10,4 @@ RUN npm install
 
 CMD ["bash"]
 
-RUN localedef -c -f UTF-8 -i zh_CN zh_CN.utf-8 zh_TW zh_TW.utf-8 
+ENV LNAG="C.UTF-8"
