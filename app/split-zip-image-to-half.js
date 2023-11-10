@@ -72,13 +72,13 @@ let main = async function () {
       mode = 'dir'
     }
     else if (file.endsWith('.pdf')) {
-      filenameNoExt = path.basename(file)
+      filenameNoExt = path.parse(file).name
       await ShellExec(`pdfimages "${file}" -png "/cache/img/"`)
 
       mode = 'pdf'
     }
     else if (file.endsWith('.png') || file.endsWith('.gif') || file.endsWith('.tif') || file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.webp')) {
-      filenameNoExt = path.basename(file)
+      filenameNoExt = path.parse(file).name
       await ShellExec(`cp "${file}" "/cache/img/"`)
 
       mode = 'img'

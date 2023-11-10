@@ -24,5 +24,7 @@ RUN localedef -c -f UTF-8 -i zh_TW zh_TW.utf8
 
 # PDF抽取圖片 20231110-2214 
 RUN apt-get install -y \
-    poppler-utils 
+    poppler-utils
+RUN apt-get install -y \
+    img2pdf 
 
