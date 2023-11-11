@@ -5,21 +5,39 @@ PROJECT_NAME=docker-app-ZIP-Image-Half-Splitter
 # =================================================================
 # 鎖定
 
-lock_file_path="/tmp/${PROJECT_NAME}.lock"
-timeout_seconds=300
-interval_seconds=3
-while [ -e "${lock_file_path}" ]; do
-  file_creation_time=$(find "$lock_file_path" -printf "%T@")
-  current_time=$(date +%s)
-  if [ $((current_time - file_creation_time)) -le $timeout_seconds ]; then
-    sleep $interval_seconds
-  else
-    break
-  fi
-done
+lock_file_path="/tmp/docker-app/${PROJECT_NAME}.lock"
+
+if [ -e "$lock_file_path" ]; then
+    # Get the creation time of the file in seconds since epoch
+    file_creation_time=$(stat -c %W "$lock_file_path")
+    current_time=$(date +%s)
+    timeout_seconds=60
+
+    if [ $((current_time - file_creation_time)) -gt $timeout_seconds ]; then
+        rm "$lock_file_path"
+    fi
+fi
+
+if [ -e "$lock_file_path" ]; then
+    parameters="$*"
+    # Read each line from the lock file
+    while IFS= read -r line; do
+        # Check if the line matches the parameters
+        if [ "$line" == "$parameters" ]; then
+            echo "Parameters already exist in the lock file. Exiting..."
+            exit 0
+        fi
+    done < "$lock_file_path"
+    echo $parameters >> "${lock_file_path}"
+    echo "Added queue ${parameters}"
+    exit 0
+else
+    echo "Lock file does not exist."
+fi
 
 # =================================================================
 
+mkdir -p /tmp/docker-app/
 touch "${lock_file_path}"
 
 # =================================================================
@@ -51,7 +69,7 @@ getRealpath() {
 
 # Get the directory path of the script
 SCRIPT_PATH=$(getRealpath "$0")
-# echo "v ${SCRIPT_PATH}"
+
 # SCRIPT_PATH=$(getRealpath "${SCRIPT_PATH}")
 
 # echo "PWD: ${SCRIPT_PATH}"
@@ -80,36 +98,37 @@ fi
 # 安裝或更新專案
 
 project_inited=false
-if [ -d "/tmp/${PROJECT_NAME}" ];
+if [ -d "/tmp/docker-app/${PROJECT_NAME}" ];
 then
-  cd "/tmp/${PROJECT_NAME}"
+  cd "/tmp/docker-app/${PROJECT_NAME}"
 
   git reset --hard
   git pull --force
 else
   project_inited = true
 	# echo "$DIR directory does not exist."
-  cd /tmp
+  mkdir -p /tmp/docker-app/
+  cd /tmp/docker-app/
   git clone "https://github.com/pulipulichen/${PROJECT_NAME}.git"
-  cd "/tmp/${PROJECT_NAME}"
+  cd "/tmp/docker-app/${PROJECT_NAME}"
 fi
 
 # -----------------
 # 確認看看要不要做docker-compose build
 
-mkdir -p "/tmp/${PROJECT_NAME}.cache"
+mkdir -p "/tmp/docker-app/${PROJECT_NAME}.cache"
 
-cmp --silent "/tmp/${PROJECT_NAME}/Dockerfile" "/tmp/${PROJECT_NAME}.cache/Dockerfile" && cmp --silent "/tmp/${PROJECT_NAME}/package.json" "/tmp/${PROJECT_NAME}.cache/package.json" || docker-compose build
+cmp --silent "/tmp/docker-app/${PROJECT_NAME}/Dockerfile" "/tmp/docker-app/${PROJECT_NAME}.cache/Dockerfile" && cmp --silent "/tmp/docker-app/${PROJECT_NAME}/package.json" "/tmp/docker-app/${PROJECT_NAME}.cache/package.json" || docker-compose build
 
-cp "/tmp/${PROJECT_NAME}/Dockerfile" "/tmp/${PROJECT_NAME}.cache/"
-cp "/tmp/${PROJECT_NAME}/package.json" "/tmp/${PROJECT_NAME}.cache/"
+cp "/tmp/docker-app/${PROJECT_NAME}/Dockerfile" "/tmp/docker-app/${PROJECT_NAME}.cache/"
+cp "/tmp/docker-app/${PROJECT_NAME}/package.json" "/tmp/docker-app/${PROJECT_NAME}.cache/"
 
 # =================
 # 從docker-compose-template.yml來判斷參數
 
 INPUT_FILE="false"
-if [ -f "/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml" ]; then
-  if grep -q "__INPUT__" "/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"; then
+if [ -f "/tmp/docker-app/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml" ]; then
+  if grep -q "__INPUT__" "/tmp/docker-app/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"; then
     INPUT_FILE="true"
   fi
 fi
@@ -119,12 +138,12 @@ fi
 # Using grep and awk to extract the public port from the docker-compose.yml file
 PUBLIC_PORT="false"
 # Step 2: Read the public port from the docker-compose.yml file
-DOCKER_COMPOSE_FILE="/tmp/${PROJECT_NAME}/docker-compose.yml"
+DOCKER_COMPOSE_FILE="/tmp/docker-app/${PROJECT_NAME}/docker-compose.yml"
 
 # Check if the default Docker Compose file exists
 if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
   # If the file doesn't exist, set an alternative file path
-  DOCKER_COMPOSE_FILE="/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"
+  DOCKER_COMPOSE_FILE="/tmp/docker-app/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"
 fi
 
 if [ -f "$DOCKER_COMPOSE_FILE" ]; then
@@ -219,7 +238,7 @@ setDockerComposeYML() {
   dirname=$(dirname "$file")
 
 
-  template=$(<"/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml")
+  template=$(<"/tmp/docker-app/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml")
   #echo "$template"
 
   # template=$(echo "$template" | sed "s/__SOURCE__/$dirname/g")
@@ -227,7 +246,7 @@ setDockerComposeYML() {
   template=$(echo "$template" | sed "s|__SOURCE__|$dirname|g")
   template=$(echo "$template" | sed "s|__INPUT__|$filename|g")
 
-  echo "$template" > "/tmp/${PROJECT_NAME}/docker-compose.yml"
+  echo "$template" > "/tmp/docker-app/${PROJECT_NAME}/docker-compose.yml"
 }
 
 # ========
@@ -252,7 +271,7 @@ runDockerCompose() {
     if ! chown -R $(whoami) ~/.docker; then
       sudo chown -R $(whoami) ~/.docker
       must_sudo="true"
-      exit 0
+      # exit 0
     fi
   fi
 
@@ -270,7 +289,7 @@ runDockerCompose() {
       sudo docker-compose down
       sudo docker-compose up --build
     fi
-    exit 0
+    # exit 0
   else
     # Set up a trap to catch Ctrl+C and call the cleanup function
     trap 'cleanup' INT
@@ -328,6 +347,7 @@ runDockerCompose() {
 cleanup() {
   echo "Stopping the Docker container..."
   docker-compose down
+  ![ -e "${lock_file_path}" ] && rm "${lock_file_path}"
   exit 1
 }
 
@@ -344,7 +364,7 @@ if [ "$INPUT_FILE" != "false" ]; then
       if [ -f "${var}" ]; then
         var=$(getRealpath "${var}")
       fi
-      cd "/tmp/${PROJECT_NAME}"
+      cd "/tmp/docker-app/${PROJECT_NAME}"
 
       setDockerComposeYML "${var}"
       runDockerCompose
@@ -359,7 +379,7 @@ if [ "$INPUT_FILE" != "false" ]; then
     fi
   fi
 else
-  cd "/tmp/${PROJECT_NAME}"
+  cd "/tmp/docker-app/${PROJECT_NAME}"
 
   # echo "PWD: ${SCRIPT_PATH}"
   setDockerComposeYML "${SCRIPT_PATH}"
@@ -373,4 +393,33 @@ fi
 # =================================================================
 # 解除鎖定
 
-![ -e "${lock_file_path}" ] && rm "${lock_file_path}"
+# Check if the lock file exists and is not empty
+while [ -s "$lock_file_path" ]; do
+  # Get the first line as the parameter
+  parameters=$(head -n 1 "$lock_file_path")
+  # Remove the first line from the lock file
+  tail -n +2 "$lock_file_path" > "$lock_file_path.tmp" && mv "$lock_file_path.tmp" "$lock_file_path"
+
+  # =================================================================
+  if [ ! "${parameters}" == "" ]; then
+
+    cd "${WORK_DIR}"
+
+    if [ -f "${parameters}" ]; then
+      parameters=$(getRealpath "${parameters}")
+    fi
+    cd "/tmp/docker-app/${PROJECT_NAME}"
+
+    setDockerComposeYML "${parameters}"
+    runDockerCompose
+  fi
+done
+
+# =================================================================
+# 移除鎖
+
+echo "Lock file is empty or does not exist. Removing and exiting..."
+if [ -e "${lock_file_path}" ]; then 
+  rm "${lock_file_path}"
+fi
+exit 0

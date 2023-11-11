@@ -4,6 +4,43 @@
 Global $sPROJECT_NAME = "docker-app-ZIP-Image-Half-Splitter"
 
 ;~ ---------------------
+; Lock
+
+Local $lock_file_path = @HomeDrive & @HomePath & "\docker-app\" & $sPROJECT_NAME & ".lock"
+
+If FileExists($lock_file_path) Then
+    ; Get the creation time of the file in seconds since epoch
+    Local $file_creation_time = _FileGetTime($lock_file_path, $FT_MODIFIED, 1)
+    Local $current_time = _NowCalc() ; Get the current time in seconds since epoch
+    Local $timeout_seconds = 60
+
+    If $current_time - $file_creation_time > $timeout_seconds Then
+        FileDelete($lock_file_path)
+    EndIf
+EndIf
+
+;~ ------------------------
+; Add queue
+
+If FileExists($lock_file_path) Then
+    Local $lines = _FileReadToArray($lock_file_path)
+    Local $found = False
+
+    For $i = 1 To $lines[0]
+        If StringStripWS($lines[$i], 8) = StringStripWS($parameters, 8) Then
+            ConsoleWrite("Parameters already exist in the lock file. Exiting..." & @CRLF)
+            Exit
+        EndIf
+    Next
+
+    _FileWriteToLine($lock_file_path, $lines[0] + 1, $parameters, 1)
+    ConsoleWrite("Added queue " & $parameters & @CRLF)
+    Exit
+Else
+    ConsoleWrite("Lock file does not exist." & @CRLF)
+EndIf
+
+;~ ---------------------
 
 ;~ MsgBox($MB_SYSTEMMODAL, "Title", "This message box will timeout after 10 seconds or select the OK button.", 10)
 Local $sProjectFolder = @HomeDrive & @HomePath & "\docker-app\" & $sPROJECT_NAME
@@ -277,7 +314,8 @@ Func runDockerCompose()
 	RunWait(@ComSpec & " /c docker-compose down")
 	If $PUBLIC_PORT = 0 then
 		RunWait(@ComSpec & " /c docker-compose up --build")
-		Exit(0)
+		;Exit(0)
+		Return
 	Else
 		RunWait(@ComSpec & " /c docker-compose up --build -d")
 	EndIf
@@ -322,7 +360,8 @@ Func runDockerCompose()
 	RunWait(@ComSpec & " /c docker-compose down")
 
 	; Exit the script
-	Exit(0)
+	;Exit(0)
+	Return
 EndFunc
 
 ;~ ---------------------
@@ -360,4 +399,31 @@ Else
 	FileChangeDir($sProjectFolder)
 	setDockerComposeYML(@ScriptFullPath)
 	runDockerCompose()
+EndIf
+
+;~ ------------------------
+; Process queue
+
+While FileGetSize($lock_file_path) > 0
+    ; Read the first line as the parameter
+    Local $parameters = FileReadLine($lock_file_path)
+
+    ; Remove the first line from the lock file
+    Local $lines = _FileReadToArray($lock_file_path)
+    _FileWriteFromArray($lock_file_path, $lines, 2)
+
+    ; =================================================================
+    If $parameters <> "" Then
+        setDockerComposeYML('"' & $sWorkingDir & "/" & $parameters & '"')
+				runDockerCompose()
+    EndIf
+WEnd
+
+;~ ------------------------
+; Remove lock
+
+ConsoleWrite("Lock file is empty or does not exist. Removing and exiting..." & @CRLF)
+
+If FileExists($lock_file_path) Then
+    FileDelete($lock_file_path)
 EndIf
