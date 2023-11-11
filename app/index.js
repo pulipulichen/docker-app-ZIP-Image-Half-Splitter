@@ -92,16 +92,16 @@ let main = async function () {
 
     // await ShellSpawn(`img2pdf -o "/input/${filenameNoExt}.pdf" ${imgs.join(" ")}`)
     if (mode === 'zip') {
-      await ShellExec(`cd /cache/img/; zip -r -j "/input/${filenameNoExt}_half.zip" ./*`)
+      await ShellExec(`cd /cache/img/; zip -r -j "/output/${filenameNoExt}_half.zip" ./*`)
     }
     else if (mode === 'pdf') {
-      await ShellExec(`cd /cache/img/; img2pdf *.png -o "/input/${filenameNoExt}_half.pdf"`)
+      await ShellExec(`cd /cache/img/; img2pdf *.png -o "/output/${filenameNoExt}_half.pdf"`)
     } 
     else if (mode === 'dir') {
-      await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/input/${filenameNoExt}_half/"`)
+      await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/output/${filenameNoExt}_half/"`)
     } 
     else if (mode === 'img') {
-      await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/input/${filenameNoExt}_half/"`)
+      await ShellExec(`cd /cache/img/; mkdir -p "/input/${filenameNoExt}_half"; cp -rf * "/output/${filenameNoExt}_half/"`)
     } 
   }
 }
