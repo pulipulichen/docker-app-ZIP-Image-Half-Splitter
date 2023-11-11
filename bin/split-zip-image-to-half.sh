@@ -3,6 +3,26 @@
 PROJECT_NAME=docker-app-ZIP-Image-Half-Splitter
 
 # =================================================================
+# 鎖定
+
+lock_file_path="/tmp/${PROJECT_NAME}.lock"
+timeout_seconds=300
+interval_seconds=3
+while [ -e "${lock_file_path}" ]; do
+  file_creation_time=$(find "$lock_file_path" -printf "%T@")
+  current_time=$(date +%s)
+  if [ $((current_time - file_creation_time)) -le $timeout_seconds ]; then
+    sleep $interval_seconds
+  else
+    break
+  fi
+done
+
+# =================================================================
+
+touch "${lock_file_path}"
+
+# =================================================================
 # 宣告函數
 
 openURL() {
@@ -59,6 +79,7 @@ fi
 # ---------------
 # 安裝或更新專案
 
+project_inited=false
 if [ -d "/tmp/${PROJECT_NAME}" ];
 then
   cd "/tmp/${PROJECT_NAME}"
@@ -66,6 +87,7 @@ then
   git reset --hard
   git pull --force
 else
+  project_inited = true
 	# echo "$DIR directory does not exist."
   cd /tmp
   git clone "https://github.com/pulipulichen/${PROJECT_NAME}.git"
@@ -87,7 +109,7 @@ cp "/tmp/${PROJECT_NAME}/package.json" "/tmp/${PROJECT_NAME}.cache/"
 
 INPUT_FILE="false"
 if [ -f "/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml" ]; then
-  if grep -q "\[INPUT\]" "/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"; then
+  if grep -q "__INPUT__" "/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml"; then
     INPUT_FILE="true"
   fi
 fi
@@ -108,8 +130,9 @@ fi
 if [ -f "$DOCKER_COMPOSE_FILE" ]; then
   PUBLIC_PORT=$(awk '/ports:/{flag=1} flag && /- "[0-9]+:[0-9]+"/{split($2, port, ":"); gsub(/"/, "", port[1]); print port[1]; flag=0}' "$DOCKER_COMPOSE_FILE")
 fi
-
-#echo "P: ${PUBLIC_PORT}"
+if [ "${PUBLIC_PORT}" == "" ]; then
+  PUBLIC_PORT="false"
+fi
 
 # =================
 # 讓Docker能順利運作的設定
@@ -168,13 +191,22 @@ getCloudflarePublicURL() {
 #     # echo "not exists ${cloudflare_file}"
 #     sleep 1  # Check every 1 second
 #   done
+  timeout=60
+  interval=5
+  elapsed_time=0
 
-  while [ ! -s "$cloudflare_file" ] || [ ! -f "$cloudflare_file" ]; do
-      #echo "cloudflare not found or empty. Waiting..."
-      sleep 5  # Adjust the sleep duration as needed
+  while [ $elapsed_time -lt $timeout ]; do
+    if [ -s "$cloudflare_file" ] && [ -f "$cloudflare_file" ]; then
+        echo $(<"$cloudflare_file")
+        exit 0
+    fi
+
+    sleep $interval
+    elapsed_time=$((elapsed_time + interval))
   done
 
-  echo $(<"$cloudflare_file")
+  echo "false"
+  exit 1
 }
 
 # ----------------------------------------------------------------
@@ -190,8 +222,10 @@ setDockerComposeYML() {
   template=$(<"/tmp/${PROJECT_NAME}/docker-build/image/docker-compose-template.yml")
   #echo "$template"
 
-  template="${template/\[SOURCE\]/$dirname}"
-  template="${template/\[INPUT\]/$filename}"
+  # template=$(echo "$template" | sed "s/__SOURCE__/$dirname/g")
+  # template=$(echo "$template" | sed "s/__INPUT__/$filename/g")
+  template=$(echo "$template" | sed "s|__SOURCE__|$dirname|g")
+  template=$(echo "$template" | sed "s|__INPUT__|$filename|g")
 
   echo "$template" > "/tmp/${PROJECT_NAME}/docker-compose.yml"
 }
@@ -223,7 +257,7 @@ runDockerCompose() {
   fi
 
   #echo "m ${must_sudo}"
-
+  
   if [ "$PUBLIC_PORT" == "false" ]; then
     if [ "$must_sudo" == "false" ]; then
       docker-compose down
@@ -265,10 +299,15 @@ runDockerCompose() {
     echo "You can link the website via following URL:"
     echo ""
 
+
     # openURL "http://127.0.0.1:$PUBLIC_PORT"
     # echo "${cloudflare_url}"
-    openURL "${cloudflare_url}"
-    echo "http://127.0.0.1:$PUBLIC_PORT"
+    if [ "$cloudflare_url" == "false" ] && [ project_inited == true ]; then
+      openURL "http://127.0.0.1:$PUBLIC_PORT"
+    else
+      openURL "${cloudflare_url}"
+      echo "http://127.0.0.1:$PUBLIC_PORT"
+    fi
 
     echo ""
     # Keep the script running to keep the container running
@@ -303,11 +342,11 @@ if [ "$INPUT_FILE" != "false" ]; then
       cd "${WORK_DIR}"
 
       if [ -f "${var}" ]; then
-        var=getRealpath "${var}"
+        var=$(getRealpath "${var}")
       fi
       cd "/tmp/${PROJECT_NAME}"
-      setDockerComposeYML "${var}"
 
+      setDockerComposeYML "${var}"
       runDockerCompose
     done
   else
@@ -330,3 +369,8 @@ else
   rm -f "${cloudflare_file}"
   runDockerCompose
 fi
+
+# =================================================================
+# 解除鎖定
+
+![ -e "${lock_file_path}" ] && rm "${lock_file_path}"
