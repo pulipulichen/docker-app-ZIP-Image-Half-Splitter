@@ -41,6 +41,14 @@ Else
 EndIf
 
 ;~ ---------------------
+; create lock
+; Open the file in write mode to create or update the access and modification times
+Global $fileHandle = FileOpen($lock_file_path, $FO_OVERWRITE)
+
+; Close the file handle
+FileClose($fileHandle)
+
+;~ ---------------------
 
 ;~ MsgBox($MB_SYSTEMMODAL, "Title", "This message box will timeout after 10 seconds or select the OK button.", 10)
 Local $sProjectFolder = @HomeDrive & @HomePath & "\docker-app\" & $sPROJECT_NAME
