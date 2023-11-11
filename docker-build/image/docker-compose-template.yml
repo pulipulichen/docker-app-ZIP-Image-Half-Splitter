@@ -12,4 +12,4 @@ services:
       - ./app:/app/
       - ./cache:/cache/
       - __SOURCE__:/input/
-      - __SOURCE__:/ouput/
+      - __SOURCE__:/output/
