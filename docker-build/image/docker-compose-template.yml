@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    image: pudding/docker-app:zip-image-half-spliter-20231111.194424
+    image: pudding/docker-app:zip-image-half-spliter-20231111.194830
     tty: true
     command: node /app/index.js "/input/__INPUT__"
     environment:
