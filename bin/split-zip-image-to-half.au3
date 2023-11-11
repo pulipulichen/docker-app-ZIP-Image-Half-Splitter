@@ -83,7 +83,7 @@ Local $INPUT_FILE = 0
 
 If FileExists($sProjectFolder & "\docker-build\image\docker-compose-template.yml") Then
   Local $fileContent = FileRead($sProjectFolder & "\docker-build\image\docker-compose-template.yml")
-  If StringInStr($fileContent, "[INPUT]") Then
+  If StringInStr($fileContent, "__INPUT__") Then
     $INPUT_FILE = 1
   EndIf
 EndIf
@@ -236,8 +236,8 @@ Func setDockerComposeYML($file)
 		;Local $template = FileRead($sProjectFolder & "\docker-build\image\docker-compose-template.yml")
 		;ConsoleWrite($template)
 		
-		$template = StringReplace($template, "[SOURCE]", $dirname)
-		$template = StringReplace($template, "[INPUT]", $filename)
+		$template = StringReplace($template, "__SOURCE__", $dirname)
+		$template = StringReplace($template, "__INPUT__", $filename)
 	EndIf
 	FileDelete($sProjectFolder & "\docker-compose.yml")
     FileWrite($sProjectFolder & "\docker-compose.yml", $template)
@@ -347,7 +347,7 @@ If $INPUT_FILE = 1 Then
 		Next
 	Else
 		For $i = 1 To $sFiles[0]
-			MsgBox($MB_SYSTEMMODAL, $sPROJECT_NAME, $sFiles[$i])
+			;MsgBox($MB_SYSTEMMODAL, $sPROJECT_NAME, $sFiles[$i])
 			If FileExists($sFiles[$i]) Then
 				FileChangeDir($sProjectFolder)
 				; ShellExecuteWait("node", $sProjectFolder & "\index.js" & ' "' & $sFiles[$i] & '"')
