@@ -3,6 +3,7 @@ services:
   app:
     build: .
     tty: true
+    user: "${UID}:${GID}"
     command: node /app/split-zip-image-to-half.js "/input/資組.zip"
     volumes: 
       - ./app:/app/
